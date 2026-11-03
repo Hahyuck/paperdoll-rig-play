@@ -6,7 +6,7 @@
 /* Layout (desktop): top = 3 stages (front/back images, 3D, pixel) · bottom = control dock. Under 1001px it stacks. */
 :root{
   --bg:#13151c; --panel:#1b1e28; --line:#2c3142; --fg:#e7e3d6; --muted:#8e93a5; --accent:#f2c14e; --accent2:#5fd3c6;
-  --ink:#0d0f14; --stageH:clamp(300px,calc(100vh - 570px),640px);
+  --ink:#0d0f14; --stageH:clamp(300px,calc(100vh - 640px),460px);
   --f-display:"Silkscreen", "JetBrains Mono", monospace;
   --f-body:"IBM Plex Sans KR", system-ui, sans-serif;
   --f-mono:"JetBrains Mono", ui-monospace, monospace;
@@ -67,7 +67,7 @@ button.primary,.filebtn.primary{background:var(--accent);color:#1a1408;border-co
 .sep{height:1px;background:var(--line);margin:2px 0}
 .legend{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:11px;color:var(--muted)}
 .legend i{display:inline-block;width:9px;height:9px;margin-right:4px;vertical-align:-1px;border-radius:1px}
-#sheetWrap{margin-top:14px}
+#sheetWrap{margin:0;border-top:1px solid var(--line)}
 #animPanel{margin-top:14px}
 .animgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px 22px}
 .animgrid>div{display:flex;flex-direction:column;gap:9px;min-width:0}
@@ -94,7 +94,14 @@ input[type=text]{font:13px var(--f-body);background:#262a37;color:var(--fg);bord
 .axbox summary{cursor:pointer;font-size:12px;color:var(--accent)}
 .axbox[open] summary{margin-bottom:6px}
 .dock{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
-@media (max-height:699px){.stagewrap{position:static}}
+@media (max-height:939px){.stagewrap{position:static}}   /* zoomed in / short window: plain page scroll so nothing gets stuck under the top */
+@media (min-width:1001px) and (min-height:940px){
+  html,body{height:100%}
+  body{box-sizing:border-box;height:100vh;overflow:hidden;display:flex;flex-direction:column;padding-block:12px}
+  body>header{flex:none;margin-bottom:10px}
+  .stagewrap{position:static;flex:none;padding-bottom:10px;margin-top:0}
+  .console{flex:1 1 auto;min-height:0;overflow:auto}
+}
 @media (max-width:1000px){
   .stagewrap{position:static}
   .stagebar{grid-template-columns:1fr;height:auto}
@@ -244,6 +251,12 @@ input[type=text]{justify-content:flex-start;font-weight:400}
       <div class="pane" id="paneB" data-side="back"><span class="tag">뒤</span><canvas class="ed" id="edB"></canvas>
         <div class="empty" id="backEmpty" hidden>뒷모습이 없으면<br>앞모습을 뒤집어 씁니다<label class="filebtn" for="fileB">뒤 이미지 넣기</label></div></div>
     </div>
+    <div class="btns imgbtns" style="--n:3">
+      <input id="fileF" class="vh" type="file" accept="image/*"><label class="filebtn primary" for="fileF">앞 이미지</label>
+      <input id="fileB" class="vh" type="file" accept="image/*"><label class="filebtn primary" for="fileB">뒤 이미지</label>
+      <button id="clearB">뒤 지우기</button>
+    </div>
+    <div class="btns imgbtns" style="--n:3"><button id="preset">보낸 캐릭터</button><button id="sample">도트 샘플</button><button id="auto">관절 자동 배치</button></div>
   </section>
   <section class="stg" aria-label="3D 모션 화면">
     <h2>② 3D 모션 <span id="clipInfo"></span></h2>
@@ -289,12 +302,7 @@ input[type=text]{justify-content:flex-start;font-weight:400}
 <div class="console" aria-label="조작 패널">
 <div class="dock">
   <section class="panel" aria-label="이미지">
-    <h2>이미지</h2>
-    <div class="btns" style="--n:3">
-      <input id="fileF" class="vh" type="file" accept="image/*"><label class="filebtn primary" for="fileF">앞 이미지</label>
-      <input id="fileB" class="vh" type="file" accept="image/*"><label class="filebtn primary" for="fileB">뒤 이미지</label>
-      <button id="clearB">뒤 지우기</button><button id="preset">보낸 캐릭터</button><button id="sample">도트 샘플</button><button id="auto">관절 자동 배치</button>
-    </div>
+    <h2>이미지 · 뼈</h2>
     <div class="opts" style="--n:3"><label class="chk" data-tip="앞에서 점 하나를 옮기면 뒤의 같은 관절이 거울 위치로 따라갑니다(뒤에서 옮겨도 같아요). 노란 점이 캐릭터의 왼쪽이라 앞에서는 화면 오른쪽, 뒤에서는 화면 왼쪽에 옵니다. 앞뒤 그림의 키와 발끝 높이를 맞춰 그리면 가장 잘 맞아요."><input id="sym" type="checkbox" checked>대칭 잠금</label><label class="chk" data-tip="픽셀이 어느 파츠에 배정됐는지 색으로 겹쳐 보여줍니다."><input id="showSplit" type="checkbox" checked>파츠 보기</label><label class="chk" data-tip="이미지의 단색 배경을 투명으로 처리합니다."><input id="keyBg" type="checkbox" checked>배경 제거</label></div>
     <div class="lvrow" data-tip="모션용 관절 19개는 그대로 두고, 그림을 나누는 뼈 수만 바꿉니다. 정밀은 손·발까지 따로, 기본은 손·발을 아래팔·정강이에 합치고, 최소는 팔·다리를 통짜로 움직입니다. 작은 도트일수록 단순한 단계가 깔끔해요. 끝 관절을 하나씩 지우거나 되살리면 사용자 지정이 됩니다."><span class="lvlab">본 단계 <em id="rigLvInfo"></em></span><div class="btns" style="--n:3" id="rigLv"><button data-lv="fine">정밀 · 14</button><button data-lv="basic">기본 · 10</button><button data-lv="min">최소 · 6</button></div></div>
     <div class="legend" id="legend"></div>
@@ -373,15 +381,16 @@ input[type=text]{justify-content:flex-start;font-weight:400}
     </div>
   </div>
 </section>
-</div>
-
-<div id="jmenu" hidden role="menu"></div>
 <div id="sheetWrap" hidden>
   <section class="panel">
     <h2><b class="ttl">스프라이트 시트 <i class="q" tabindex="0" data-tip="행은 위에서부터 Turn 0°, 45°, 90° … 315°, 열은 시간순 프레임입니다. 이미지를 오른쪽 클릭해서 저장하세요.">?</i></b><span id="sheetInfo"></span></h2>
     <div id="sheetBox"><img id="sheet" alt="8방향 스프라이트 시트"></div>
   </section>
 </div>
+</div>
+
+<div id="jmenu" hidden role="menu"></div>
+
 
 <script>
 (()=>{
@@ -1533,11 +1542,11 @@ function drawTL(tq){const cv=$('tl');const W=cv.clientWidth;if(!W)return;
   if(custom){const sig=coreOf(anim)+'|'+(baseline?baseline.core:'')+'|'+EXTRA.length+'|'+anim.name;if(sig!==TL.sig){TL.sig=sig;tlAnalyze();tlText();}}
   else if(TL.sig!=='clip:'+$('clip').value){TL.sig='clip:'+$('clip').value;TL.info=null;TL.hover=null;tlText();}
   const I=custom?TL.info:null,curve=$('tlCurve').checked,sj=selJoint,ids=tlIds(),ord=id=>{const i=ids.indexOf(id);return i<0?99:i;};
-  const MAXR=6;let rows=I?I.rows.slice():[];if(!rows.includes(sj))rows.push(sj);
+  const MAXR=5;let rows=I?I.rows.slice():[];if(!rows.includes(sj))rows.push(sj);
   let more=0;if(rows.length>MAXR){more=rows.length-MAXR;const keep=rows.filter(r=>r!==sj).slice(0,MAXR-1);rows=rows.filter(r=>r===sj||keep.includes(r));}
   for(const id of['lUp','rUp','lThigh','rThigh','torso','head'])if(rows.length<MAXR&&!rows.includes(id))rows.push(id);   // keep the sheet open at a fixed height
   rows.sort((a,b)=>ord(a)-ord(b));
-  const RU=18,AR=24,RH=19,CH=curve?84:0,H=RU+AR+MAXR*RH+14+(CH?CH+6:0)+4;
+  const RU=18,AR=22,RH=18,CH=curve?66:0,H=RU+AR+MAXR*RH+14+(CH?CH+6:0)+4;
   if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.height=H+'px';}
   const c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
   const G=TL.G,dur=Math.max(.01,custom?anim.dur:clipDur()),X=tt=>G+tt/dur*(W-G-TLR);TL.w=W;TL.dur=dur;TL.hits=[];
